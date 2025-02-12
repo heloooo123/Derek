@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stay up!</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <style>
+        main {
+            padding: 20px;
+            display: block;
+            min-height: 100vh;
+            min-width: 100vh;
+        }
+        h2 {
+            text-align: center;
+            color: #004aad;
+        }
+        .comment-section {
+            max-height: 50vh;
+            max-width: 100%;
+            background-color: #004aad;
+            overflow-y: scroll;
+            margin-top: 20px;
+        }
+        .comment {
+            height: 10%;
+            padding: 2%;
+            margin: 2%;
+            background-color: #ffff;
+            color: black;
+        }
+        canvas {
+            border: 1px solid #d3d3d3;
+            background-color: #f1f1f1;
+            display: block;
+            margin: 0 auto;
+        }
+        .controls {
+            text-align: center;
+            margin-top: 20px;
+        }
+        button {
+            font-size: 18px;
+            padding: 10px 20px;
+            background-color: #004aad;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #00337b;
+        }
+
+        /* Jumpscare Image */
+        #jumpscare {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+        #jumpscare img {
+            max-width: 80%;
+            max-height: 80%;
+        }
+    </style>
+</head>
+<body onload="startGame()">
+    <main>
+        <h2>Can you stay up?</h2>
+        
+        <!-- Game Canvas -->
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- Controls -->
+        <div class="controls">
+            <button onmousedown="accelerate(-0.2)" onmouseup="accelerate(0.05)">ACCELERATE</button>
+            <p>Use the ACCELERATE button to stay in the air</p>
+            <p>How long can you stay alive?</p>
+        </div>
+
+        <!-- Comment Section -->
+        <div class="comment-section">
+            <div class="comment">I love this game.</div>
+            <div class="comment">This game is very good.</div>
+            <div class="comment">10/10 game.</div>
+            <div class="comment">This is revolutionary.</div>
+            <div class="comment">My parents and my dog love playing this game.</div>
+            <div class="comment">This is sixth comment.</div>
+        </div>
+    </main>
+    
+    <!-- Jumpscare Overlay -->
+    <div id="jumpscare">
+        <img src="jumpscare_image.jpg" alt="Jumpscare">
+    </div>
+
+    <script>
+        // Game Logic
+        var myGamePiece;
+        var myObstacles = [];
+        var myScore;
+
+        function startGame() {
+            myGamePiece = new component(30, 30, "red", 10, 120);
+            myGamePiece.gravity = 0.05;
+            myScore = new component("30px", "Consolas", "black", 280, 40, "text");
+            myGameArea.start();
+        }
+
+        var myGameArea = {
+            canvas: document.getElementById("gameCanvas"),
+            start: function () {
+                this.canvas.width = 480;
+                this.canvas.height = 270;
+                this.context = this.canvas.getContext("2d");
+                this.frameNo = 0;
+                this.interval = setInterval(updateGameArea, 20);
+            },
+            clear: function () {
+                this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            }
+        }
+
+        function component(width, height, color, x, y, type) {
+            this.type = type;
+            this.width = width;
+            this.height = height;
+            this.x = x;
+            this.y = y;
+            this.speedX = 0;
+            this.speedY = 0;
+            this.gravity = 0;
+            this.gravitySpeed = 0;
+            this.update = function () {
+                ctx = myGameArea.context;
+                if (this.type == "text") {
+                    ctx.font = this.width + " " + this.height;
+                    ctx.fillStyle = color;
+                    ctx.fillText(this.text, this.x, this.y);
+                } else {
+                    ctx.fillStyle = color;
+                    ctx.fillRect(this.x, this.y, this.width, this.height);
+                }
+            }
+            this.newPos = function () {
+                this.gravitySpeed += this.gravity;
+                this.x += this.speedX;
+                this.y += this.speedY + this.gravitySpeed;
+                this.hitBottom();
+            }
+            this.hitBottom = function () {
+                var rockbottom = myGameArea.canvas.height - this.height;
+                if (this.y > rockbottom) {
+                    this.y = rockbottom;
+                    this.gravitySpeed = 0;
+                }
+            }
+            this.crashWith = function (otherobj) {
+                var myleft = this.x;
+                var myright = this.x + (this.width);
+                var mytop = this.y;
+                var mybottom = this.y + (this.height);
+                var otherleft = otherobj.x;
+                var otherright = otherobj.x + (otherobj.width);
+                var othertop = otherobj.y;
+                var otherbottom = otherobj.y + (otherobj.height);
+                return !((mybottom < othertop) || (mytop > otherbottom) || (myright < otherleft) || (myleft > otherright));
+            }
+        }
+
+        function updateGameArea() {
+            var x, height, gap, minHeight, maxHeight, minGap, maxGap;
+            for (i = 0; i < myObstacles.length; i++) {
+                if (myGamePiece.crashWith(myObstacles[i])) {
+                    return;
+                }
+            }
+            myGameArea.clear();
+            myGameArea.frameNo += 1;
+            if (myGameArea.frameNo == 1 || everyinterval(150)) {
+                x = myGameArea.canvas.width;
+                minHeight = 20;
+                maxHeight = 200;
+                height = Math.floor(Math.random() * (maxHeight - minHeight + 1) + minHeight);
+                minGap = 50;
+                maxGap = 200;
+                gap = Math.floor(Math.random() * (maxGap - minGap + 1) + minGap);
+                myObstacles.push(new component(10, height, "green", x, 0));
+                myObstacles.push(new component(10, x - height - gap, "green", x, height + gap));
+            }
+            for (i = 0; i < myObstacles.length; i++) {
+                myObstacles[i].x += -1;
+                myObstacles[i].update();
+            }
+            myScore.text = "SCORE: " + myGameArea.frameNo;
+            myScore.update();
+            myGamePiece.newPos();
+            myGamePiece.update();
+
+            // Jumpscare trigger when score hits 1000
+            if (myGameArea.frameNo >= 1000) {
+                triggerJumpscare();
+            }
+        }
+
+        function triggerJumpscare() {
+            // Show the jumpscare overlay
+            img src="banana1.jpg"
+
+            // Optionally play a sound
+            var sound = new Audio('jumpscare_sound.mp3');
+            sound.play();
+
+            // Hide jumpscare after 2 seconds
+            setTimeout(function () {
+                document.getElementById("jumpscare").style.display = "none";
+            }, 2000);
+        }
+
+        function everyinterval(n) {
+            return (myGameArea.frameNo / n) % 1 === 0;
+        }
+
+        function accelerate(n) {
+            myGamePiece.gravity = n;
+        }
+    </script>
+</body>
+</html>
